@@ -42,11 +42,6 @@ cdf() {
     file=$(fzf +m -q "$1") && dir=$(dirname "$file") && cd "$dir"
 }
 
-grep --line-buffered --color=never -r "" * | fzf
-
-# with ag - respects .agignore and .gitignore
-ag --nobreak --nonumbers --noheading . | fzf
-
 # fkill - kill process
 fkill() {
     pid=$(ps -ef | sed 1d | fzf -m | awk '{print $2}')
