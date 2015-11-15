@@ -7,6 +7,7 @@ alias vf='cd'
 alias moer='more'
 alias moew='more'
 alias kk='ll'
+alias emcas='emacs'
 
 #-------------------------------------------------------------
 # File & strings related functions:
