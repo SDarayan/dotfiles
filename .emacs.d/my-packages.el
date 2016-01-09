@@ -21,6 +21,7 @@
     ggtags
     evil-nerd-commenter
     undo-tree
+    diffview
   ) "a list of packages to ensure are installed at launch.")
 
 ; method to check if all packages are installed
