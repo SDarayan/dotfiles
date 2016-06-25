@@ -2,13 +2,17 @@
 ; loading package
 (load "~/.emacs.d/my-packages.el")
 
-(require 'autopair)
-(autopair-global-mode 1)
-(setq autopair-autowrap t)
+;;; smartparens
+(require 'smartparens-config)
+(show-smartparens-global-mode +1)
+(smartparens-global-mode 1)
 
-(require 'goto-last-change)
-(define-key global-map (kbd "M-l") 'goto-last-change)
-
+;; when you press RET, the curly braces automatically
+;; add another newline
+(sp-with-modes '(c-mode c++-mode)
+               (sp-local-pair "{" nil :post-handlers '(("||\n[i]" "RET")))
+               (sp-local-pair "/*" "*/" :post-handlers '((" | " "SPC")
+                                                         ("* ||\n[i]" "RET"))))
 ;;; yasnippet
 ;;; should be loaded before auto complete so that they can work together
 (require 'yasnippet)
@@ -42,31 +46,92 @@
 (define-key c++-mode-map (kbd "C-x a") 'ac-complete-clang)
 ;; replace C-S-<return> with a key binding that you want
 
-(require 'sr-speedbar)
-(global-set-key (kbd "M-s") 'sr-speedbar-toggle)
-
 (require 'auto-complete-c-headers)
 (add-to-list 'ac-sources 'ac-source-c-headers)
 
-(require 'ggtags)
-(add-hook 'c-mode-common-hook
-          (lambda ()
-            (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
-              (ggtags-mode 1))))
-
-(define-key ggtags-mode-map (kbd "C-c g s") 'ggtags-find-other-symbol)
-(define-key ggtags-mode-map (kbd "C-c g h") 'ggtags-view-tag-history)
-(define-key ggtags-mode-map (kbd "C-c g r") 'ggtags-find-reference)
-(define-key ggtags-mode-map (kbd "C-c g f") 'ggtags-find-file)
-(define-key ggtags-mode-map (kbd "C-c g c") 'ggtags-create-tags)
-(define-key ggtags-mode-map (kbd "C-c g u") 'ggtags-update-tags)
-
-(define-key ggtags-mode-map (kbd "M-,") 'pop-tag-mark)
-
-(global-set-key (kbd "M-;") 'evilnc-comment-or-uncomment-lines)
-(global-set-key (kbd "C-c l") 'evilnc-quick-comment-or-uncomment-to-the-line)
-(global-set-key (kbd "C-c c") 'evilnc-copy-and-comment-lines)
-(global-set-key (kbd "C-c p") 'evilnc-comment-or-uncomment-paragraphs)
-
+;;; undo-tree
 (require 'undo-tree)
 (global-undo-tree-mode)
+
+;;; helm
+(require 'helm-config)
+(helm-multi-key-defun helm-multi-lisp-complete-at-point
+    "Multi key function for completion in emacs lisp buffers.
+First call indent, second complete symbol, third complete fname."
+  '(helm-lisp-indent
+    helm-lisp-completion-at-point
+    helm-complete-file-name-at-point)
+  0.3)
+
+(if (and (boundp 'tab-always-indent)
+         (eq tab-always-indent 'complete)
+         (boundp 'completion-in-region-function))
+    (progn
+      (define-key lisp-interaction-mode-map [remap indent-for-tab-command] 'helm-multi-lisp-complete-at-point)
+      (define-key emacs-lisp-mode-map       [remap indent-for-tab-command] 'helm-multi-lisp-complete-at-point)
+
+      ;; lisp complete. (Rebind M-<tab>)
+      (define-key lisp-interaction-mode-map [remap completion-at-point] 'helm-lisp-completion-at-point)
+      (define-key emacs-lisp-mode-map       [remap completion-at-point] 'helm-lisp-completion-at-point))
+
+  (define-key lisp-interaction-mode-map [remap indent-for-tab-command] 'helm-multi-lisp-complete-at-point)
+  (define-key emacs-lisp-mode-map       [remap indent-for-tab-command] 'helm-multi-lisp-complete-at-point)
+
+  ;; lisp complete. (Rebind M-<tab>)
+  (define-key lisp-interaction-mode-map [remap completion-at-point] 'helm-lisp-completion-at-point)
+  (define-key emacs-lisp-mode-map       [remap completion-at-point] 'helm-lisp-completion-at-point))
+
+(unless (boundp 'completion-in-region-function)
+  (add-hook 'ielm-mode-hook
+            #'(lambda ()
+                (define-key ielm-map [remap completion-at-point] 'helm-lisp-completion-at-point))))
+
+;;; Helm-variables
+;;
+;;
+(setq helm-net-prefer-curl                            t
+      helm-kill-ring-threshold                        1
+      helm-scroll-amount                              4
+      helm-idle-delay                                 0.01
+      helm-input-idle-delay                           0.01
+      helm-ff-auto-update-initial-value               t
+      helm-grep-default-command                       "ack-grep -Hn --color --smart-case --no-group %e %p %f"
+      helm-grep-default-recurse-command               "ack-grep -H --color --smart-case --no-group %e %p %f"
+      helm-reuse-last-window-split-state              t
+      helm-always-two-windows                         t
+      helm-split-window-in-side-p                     nil
+      helm-M-x-requires-pattern                       0
+      helm-dabbrev-cycle-threshold                    5
+      helm-boring-file-regexp-list
+      '("\\.git$" "\\.hg$" "\\.svn$" "\\.CVS$" "\\._darcs$" "\\.la$" "\\.o$" "\\.i$" "\\.steam$" "\\undo-tree-history$")
+      helm-buffer-skip-remote-checking                t
+      helm-apropos-fuzzy-match                        t
+      helm-M-x-fuzzy-match                            t
+      helm-lisp-fuzzy-completion                      t
+      helm-completion-in-region-fuzzy-match           t
+      helm-buffers-fuzzy-matching                     t
+      helm-move-to-line-cycle-in-source               t
+      ido-use-virtual-buffers                         t             ; Needed in helm-buffers-list
+      helm-tramp-verbose                              6
+      helm-locate-command                             "locate %s -e -A --regex %s"
+      helm-org-headings-fontify                       t
+      helm-autoresize-max-height                      80 ; it is %.
+      helm-autoresize-min-height                      20 ; it is %.
+      helm-buffers-to-resize-on-pa                    '("*helm apropos*" "*helm ack-grep*"
+                                                        "*helm grep*" "*helm occur*" "*helm ag*"
+                                                        "*helm multi occur*" "*helm git-grep*"
+                                                        "*helm imenu*" "*helm imenu all*"
+                                                        "*helm gid*" "*helm semantic/imenu*")
+      fit-window-to-buffer-horizontally               1
+      helm-open-github-closed-issue-since             7
+      helm-highlight-matches-around-point-max-lines   30
+      helm-search-suggest-action-wikipedia-url
+      "https://fr.wikipedia.org/wiki/Special:Search?search=%s"
+      helm-wikipedia-suggest-url
+      "https://fr.wikipedia.org/w/api.php?action=opensearch&search="
+      helm-wikipedia-summary-url
+      "https://fr.wikipedia.org/w/api.php?action=parse&format=json&prop=text&section=0&page="
+      helm-firefox-show-structure nil
+      helm-turn-on-recentf nil
+      helm-mini-default-sources '(helm-source-buffers-list helm-source-buffer-not-found)
+      helm-debug-root-directory "/home/sdarayan/tmp/helm-debug")

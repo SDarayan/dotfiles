@@ -54,3 +54,10 @@ source $BASH_IT/bash_it.sh
 # Not sure why bash_it sets my EDITOR to "-w"
 export EDITOR=emacs
 export GIT_EDITOR=$EDITOR
+
+# Additional scripts to my PATH
+# Load new emacs over the one from debian
+export PATH=/opt/emacs/bin:$PATH:/home/sdarayan/scripts
+
+# Load fzf
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash

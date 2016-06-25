@@ -1,3 +1,23 @@
+# Setup fzf
+# ---------
+if [[ ! "$PATH" == */home/sdarayan/.fzf/bin* ]]; then
+  export PATH="$PATH:/home/sdarayan/.fzf/bin"
+fi
+
+# Man path
+# --------
+if [[ ! "$MANPATH" == */home/sdarayan/.fzf/man* && -d "/home/sdarayan/.fzf/man" ]]; then
+  export MANPATH="$MANPATH:/home/sdarayan/.fzf/man"
+fi
+
+# Auto-completion
+# ---------------
+[[ $- == *i* ]] && source "/home/sdarayan/.fzf/shell/completion.bash" 2> /dev/null
+
+# Key bindings
+# ------------
+source "/home/sdarayan/.fzf/shell/key-bindings.bash"
+
 # ~/.fzf.bash
 # fe [FUZZY PATTERN] - Open the selected file with the default editor
 #   - Bypass fuzzy finder if there's only one match (--select-1)

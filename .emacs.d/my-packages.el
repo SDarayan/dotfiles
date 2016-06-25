@@ -11,17 +11,15 @@
 (defvar required-packages
   '(
     cc-mode
-    autopair
-    goto-last-change
+    smartparens
     yasnippet
     auto-complete
     auto-complete-clang
     auto-complete-c-headers
-    sr-speedbar
-    ggtags
-    evil-nerd-commenter
     undo-tree
     diffview
+    click-mode
+    helm
   ) "a list of packages to ensure are installed at launch.")
 
 ; method to check if all packages are installed
