@@ -61,3 +61,10 @@ export PATH=/opt/emacs/bin:$PATH:/home/sdarayan/scripts
 
 # Load fzf
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+# Load go
+export GOPATH=~/go
+export PATH=$PATH:$HOME/go/bin:/usr/local/go/bin
+
+# Load scmpuff
+eval "$(scmpuff init -s)"
