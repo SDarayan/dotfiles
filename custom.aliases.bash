@@ -3,7 +3,6 @@
 #-------------------------------------------------------------
 
 alias xs='cd'
-alias vf='cd'
 alias moer='more'
 alias moew='more'
 alias kk='ll'
@@ -166,3 +165,52 @@ function ii()   # Get current host related info.
     echo
 }
 
+function ipcrmall()  # Remove all IPC from current host.
+{
+    ME=`whoami`
+
+    IPCS_S=`ipcs -s | egrep "0x[0-9a-f]+ [0-9]+" | grep $ME | cut -f2 -d" "`
+    IPCS_M=`ipcs -m | egrep "0x[0-9a-f]+ [0-9]+" | grep $ME | cut -f2 -d" "`
+    IPCS_Q=`ipcs -q | egrep "0x[0-9a-f]+ [0-9]+" | grep $ME | cut -f2 -d" "`
+
+    for id in $IPCS_M; do
+        ipcrm -m $id;
+    done
+
+    for id in $IPCS_S; do
+        ipcrm -s $id;
+    done
+
+    for id in $IPCS_Q; do
+        ipcrm -q $id;
+    done
+}
+
+#-------------------------------------------------------------
+# Misc utilities:
+#-------------------------------------------------------------
+
+function repeat()    # Repeat n times command.
+{
+    local i max
+    max$i; shift;
+    for ((i=1; i <= max; i++)); do  # --> C-like syntax
+        eval "$@";
+    done
+}
+
+function ask()       # See 'killps' for example of use.
+{
+    echo -n "$@" '[y/n] ' ; read ans
+    case "$ans" in
+        y*|Y*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+function corename()  # Get name of app that created a corefile.
+{
+    for file ; do
+        echo -n $file : ; gdb --core=$file --batch | head -1
+    done
+}

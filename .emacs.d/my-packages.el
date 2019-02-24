@@ -11,15 +11,17 @@
 (defvar required-packages
   '(
     cc-mode
-    smartparens
-    yasnippet
-    auto-complete
-    auto-complete-clang
-    auto-complete-c-headers
-    undo-tree
     diffview
-    click-mode
+    git-timemachine
     helm
+    helm-gtags
+    helm-ls-git
+    magit
+    multiple-cursors
+    multi-compile
+    symon
+    undo-tree
+    zone
   ) "a list of packages to ensure are installed at launch.")
 
 ; method to check if all packages are installed

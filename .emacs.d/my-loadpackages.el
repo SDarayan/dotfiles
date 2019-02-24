@@ -1,94 +1,16 @@
 ;~/.emacs.d/my-loadpackages.el
+
 ; loading package
 (load "~/.emacs.d/my-packages.el")
 
-;;; smartparens
-(require 'smartparens-config)
-(show-smartparens-global-mode +1)
-(smartparens-global-mode 1)
+; loading theme
+(load-theme 'monokai t)
 
-;; when you press RET, the curly braces automatically
-;; add another newline
-(sp-with-modes '(c-mode c++-mode)
-               (sp-local-pair "{" nil :post-handlers '(("||\n[i]" "RET")))
-               (sp-local-pair "/*" "*/" :post-handlers '((" | " "SPC")
-                                                         ("* ||\n[i]" "RET"))))
-;;; yasnippet
-;;; should be loaded before auto complete so that they can work together
-(require 'yasnippet)
-(yas-global-mode 1)
-
-;;; auto complete mod
-;;; should be loaded after yasnippet so that they can work together
-(defcustom mycustom-system-include-paths '("./" "/usr/include" )
-  "This is a list of include paths that are used by the clang auto completion."
-  :group 'mycustom
-  :type '(repeat directory)
-  )
-(require 'auto-complete)
-(add-to-list 'ac-dictionary-directories "~/.emacs.d/ac-dict")
-(ac-config-default)
-;;; set the trigger key so that it can work together with yasnippet on tab key,
-;;; if the word exists in yasnippet, pressing tab will cause yasnippet to
-;;; activate, otherwise, auto-complete will
-(ac-set-trigger-key "TAB")
-(ac-set-trigger-key "<tab>")
-(setq ac-clang-flags
-      (mapcar (lambda (item)(concat "-I" item))
-              (append
-               mycustom-system-include-paths
-               )
-              )
-      )
-
-(require 'auto-complete-clang)
-(require 'cc-mode)
-(define-key c++-mode-map (kbd "C-x a") 'ac-complete-clang)
-;; replace C-S-<return> with a key binding that you want
-
-(require 'auto-complete-c-headers)
-(add-to-list 'ac-sources 'ac-source-c-headers)
-
-;;; undo-tree
-(require 'undo-tree)
-(global-undo-tree-mode)
-
-;;; helm
+; helm
 (require 'helm-config)
-(helm-multi-key-defun helm-multi-lisp-complete-at-point
-    "Multi key function for completion in emacs lisp buffers.
-First call indent, second complete symbol, third complete fname."
-  '(helm-lisp-indent
-    helm-lisp-completion-at-point
-    helm-complete-file-name-at-point)
-  0.3)
+(require 'helm-ls-git)
 
-(if (and (boundp 'tab-always-indent)
-         (eq tab-always-indent 'complete)
-         (boundp 'completion-in-region-function))
-    (progn
-      (define-key lisp-interaction-mode-map [remap indent-for-tab-command] 'helm-multi-lisp-complete-at-point)
-      (define-key emacs-lisp-mode-map       [remap indent-for-tab-command] 'helm-multi-lisp-complete-at-point)
-
-      ;; lisp complete. (Rebind M-<tab>)
-      (define-key lisp-interaction-mode-map [remap completion-at-point] 'helm-lisp-completion-at-point)
-      (define-key emacs-lisp-mode-map       [remap completion-at-point] 'helm-lisp-completion-at-point))
-
-  (define-key lisp-interaction-mode-map [remap indent-for-tab-command] 'helm-multi-lisp-complete-at-point)
-  (define-key emacs-lisp-mode-map       [remap indent-for-tab-command] 'helm-multi-lisp-complete-at-point)
-
-  ;; lisp complete. (Rebind M-<tab>)
-  (define-key lisp-interaction-mode-map [remap completion-at-point] 'helm-lisp-completion-at-point)
-  (define-key emacs-lisp-mode-map       [remap completion-at-point] 'helm-lisp-completion-at-point))
-
-(unless (boundp 'completion-in-region-function)
-  (add-hook 'ielm-mode-hook
-            #'(lambda ()
-                (define-key ielm-map [remap completion-at-point] 'helm-lisp-completion-at-point))))
-
-;;; Helm-variables
-;;
-;;
+; Helm-variables
 (setq helm-net-prefer-curl                            t
       helm-kill-ring-threshold                        1
       helm-scroll-amount                              4
@@ -134,4 +56,21 @@ First call indent, second complete symbol, third complete fname."
       helm-firefox-show-structure nil
       helm-turn-on-recentf nil
       helm-mini-default-sources '(helm-source-buffers-list helm-source-buffer-not-found)
-      helm-debug-root-directory "/home/sdarayan/tmp/helm-debug")
+      helm-debug-root-directory "/home/sdarayan/tmp/helm-debug"
+      helm-gtags-prefix-key "M-g"
+      helm-gtags-suggested-key-mapping t)
+
+; multiple-cursors
+(require 'multiple-cursors)
+
+; symon
+(require 'symon)
+(symon-mode)
+
+; undo-tree
+(require 'undo-tree)
+(global-undo-tree-mode)
+
+; zone
+(require 'zone)
+(zone-when-idle 120)

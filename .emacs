@@ -2,10 +2,17 @@
 
 ;; In every buffer, the line which contains the cursor will be fully
 ;; highlighted
+
+;; Added by Package.el.  This must come before configurations of
+;; installed packages.  Don't delete this line.  If you don't want it,
+;; just comment it out by adding a semicolon to the start of the line.
+;; You may delete these explanatory comments.
+(package-initialize)
+
 (global-hl-line-mode 1)
 
-;; ===== Set standard indent to 4 ====
-(setq standard-indent 4)
+;; ===== Set standard indent to 2 =====
+(setq standard-indent 2)
 
 ;; ========== Line by line scrolling ========== 
 
@@ -118,8 +125,17 @@
       (delete-char 1)
       (move-to-column previous-column))))
 
-;; Now bind the delete line function to the F8 key
+;; Now bind the delete line function to the M-d key
 (global-set-key (kbd "M-d") 'nuke-line)
+
+;; ===== Revert buffer no confirm  =====
+(defun revert-buffer-no-confirm()
+    "Revert buffer without confirmation."
+    (interactive)
+    (revert-buffer :ignore-auto :noconfirm))
+
+;; Now bind the revert buffer function to the M-' key
+(global-set-key (kbd "M-'") 'revert-buffer-no-confirm)
 
 ;; ===== Packages =====
 (load "~/.emacs.d/my-loadpackages.el")
@@ -128,6 +144,24 @@
 ))
 
 ;; ===== More indenting =====
-(require 'cc-mode)
-(setq-default c-basic-offset 4 c-default-style "linux")
-(define-key c-mode-base-map (kbd "RET") 'newline-and-indent)
+;(require 'cc-mode)
+;(setq-default c-basic-offset 4 c-default-style "linux")
+;(define-key c-mode-base-map (kbd "RET") 'newline-and-indent)
+
+(electric-indent-mode 0)
+
+(put 'upcase-region 'disabled nil)
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   (quote
+    (magit undo-tree symon multiple-cursors helm-ls-git helm-gtags git-timemachine focus diffview))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
