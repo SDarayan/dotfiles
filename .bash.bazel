@@ -1,0 +1,7 @@
+# .bash.bazel
+
+# Which packages depend on target library?
+function bazel_query_pkgrdeps()
+{
+  bazel query "rdeps(..., $1)" --output package
+}

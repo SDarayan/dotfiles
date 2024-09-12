@@ -1,0 +1,340 @@
+# This file is for any personal or Zoox related extension to ~/.bashrc
+# It is called once by ~/.bashrc (near end of the file)
+
+# Load bazel helpers
+[ -f ~/.bash.bazel ] && source ~/.bash.bazel
+
+# Load fzf
+[ -f ~/shayanco/fzf/.fzf.bash ] && source ~/shayanco/fzf/.fzf.bash
+[ -f ~/.bash.fzf ] && source ~/.bash.fzf
+
+# Path to the bash it configuration
+export BASH_IT="/home/sdarayan/shayanco/bash-it"
+
+# Lock and Load a custom theme file
+# location /.bash_it/themes/
+export BASH_IT_THEME='zork'
+
+# Set this to false to turn off version control status checking within
+# the prompt for all themes
+export SCM_CHECK=false
+
+# Don't check mail when opening terminal.
+unset MAILCHECK
+
+# Change this to your console based IRC client of choice.
+export IRC_CLIENT='irssi'
+
+# Set this to the command you use for todo.txt-cli
+export TODO="t"
+
+# (Advanced): Uncomment this to make Bash-it reload itself automatically
+# after enabling or disabling aliases, plugins, and completions.
+# export BASH_IT_AUTOMATIC_RELOAD_AFTER_CONFIG_CHANGE=1
+
+# Load Bash It
+source "$BASH_IT"/bash_it.sh
+
+# Not sure why bash_it sets my EDITOR to "-w"
+export EDITOR=emacs
+export GIT_EDITOR=$EDITOR
+
+# Additional scripts to my PATH
+# Load new emacs over the one from debian
+export PATH=/opt/emacs/bin:$PATH:/home/sdarayan/scripts
+
+# Load scmpuff
+export PATH=$PATH:$HOME/shayanco/scmpuff_0.4.0_linux_x64
+eval "$(scmpuff init -s)"
+
+#-------------------------------------------------------------
+# Spelling typos - highly personnal and keyboard-dependent :-)
+#-------------------------------------------------------------
+
+alias xs='cd'
+alias moer='more'
+alias moew='more'
+alias kk='ll'
+alias emcas='emacs'
+
+#-------------------------------------------------------------
+# File & strings related functions:
+#-------------------------------------------------------------
+
+# Find a file with a pattern in name:
+function ff() { find . -type f -iname '*'"$*"'*' -ls ; }
+
+# Find a file with pattern $1 in name and Execute $2 on it:
+function fe() { find . -type f -iname '*'"${1:-}"'*' \
+-exec ${2:-file} {} \;  ; }
+
+#  Find a pattern in a set of files and highlight them:
+#+ (needs a recent version of egrep).
+function fstr()
+{
+        OPTIND=1
+    local mycase=""
+    local usage="fstr: find string in files.
+Usage: fstr [-i] \"pattern\" [\"filename pattern\"] "
+    while getopts :it opt
+    do
+        case "$opt" in
+           i) mycase="-i " ;;
+           *) echo "$usage"; return ;;
+        esac
+    done
+    shift $(( $OPTIND - 1 ))
+    if [ "$#" -lt 1 ]; then
+        echo "$usage"
+        return;
+    fi
+    find . -type f -name "${2:-*}" -print0 | \
+xargs -0 egrep --color=always -sn ${case} "$1" 2>&- | more
+
+}
+
+function swap()
+{ # Swap 2 filenames around, if they exist (from Uzi's bashrc).
+    local TMPFILE=tmp.$$
+
+    [ $# -ne 2 ] && echo "swap: 2 arguments needed" && return 1
+    [ ! -e $1 ] && echo "swap: $1 does not exist" && return 1
+    [ ! -e $2 ] && echo "swap: $2 does not exist" && return 1
+
+    mv "$1" $TMPFILE
+    mv "$2" "$1"
+    mv $TMPFILE "$2"
+}
+
+function extract()      # Handy Extract Program
+{
+    if [ -f $1 ] ; then
+        case $1 in
+            *.tar.bz2)   tar xvjf $1     ;;
+            *.tar.gz)    tar xvzf $1     ;;
+            *.bz2)       bunzip2 $1      ;;
+            *.rar)       unrar x $1      ;;
+            *.gz)        gunzip $1       ;;
+            *.tar)       tar xvf $1      ;;
+            *.tbz2)      tar xvjf $1     ;;
+            *.tgz)       tar xvzf $1     ;;
+            *.zip)       unzip $1        ;;
+            *.Z)         uncompress $1   ;;
+            *.7z)        7z x $1         ;;
+            *)           echo "'$1' cannot be extracted via >extract<" ;;
+        esac
+    else
+        echo "'$1' is not a valid file!"
+    fi
+}
+
+# Creates an archive (*.tar.gz) from given directory.
+function maketar() { tar cvzf "${1%%/}.tar.gz"  "${1%%/}/"; }
+
+# Create a ZIP archive of a file or folder.
+function makezip() { zip -r "${1%%/}.zip" "$1" ; }
+
+# Make your directories and files access rights sane.
+function sanitize() { chmod -R u=rwX,g=rX,o= "$@" ;}
+
+#-------------------------------------------------------------
+# Process/system related functions:
+#-------------------------------------------------------------
+
+function my_ps() { ps $@ -u $USER -o pid,%cpu,%mem,bsdtime,command ; }
+function pp() { my_ps f | awk '!/awk/ && $0~var' var=${1:-".*"} ; }
+
+function killps()   # kill by process name
+{
+    local pid pname sig="-TERM"   # default signal
+    if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+        echo "Usage: killps [-SIGNAL] pattern"
+        return;
+    fi
+    if [ $# = 2 ]; then sig=$1 ; fi
+    for pid in $(my_ps| awk '!/awk/ && $0~pat { print $1 }' pat=${!#} )
+    do
+        pname=$(my_ps | awk '$1~var { print $5 }' var=$pid )
+        if ask "Kill process $pid <$pname> with signal $sig?"
+            then kill $sig $pid
+        fi
+    done
+}
+
+function mydf()         # Pretty-print of 'df' output.
+{                       # Inspired by 'dfc' utility.
+    for fs ; do
+
+        if [ ! -d $fs ]
+        then
+          echo -e $fs" :No such file or directory" ; continue
+        fi
+
+        local info=( $(command df -P $fs | awk 'END{ print $2,$3,$5 }') )
+        local free=( $(command df -Pkh $fs | awk 'END{ print $4 }') )
+        local nbstars=$(( 20 * ${info[1]} / ${info[0]} ))
+        local out="["
+        for ((j=0;j<20;j++)); do
+            if [ ${j} -lt ${nbstars} ]; then
+               out=$out"*"
+            else
+               out=$out"-"
+            fi
+        done
+        out=${info[2]}" "$out"] ("$free" free on "$fs")"
+        echo -e $out
+    done
+}
+
+function my_ip() # Get IP adress on ethernet.
+{
+    MY_IP=$(/sbin/ifconfig eth0 | awk '/inet/ { print $2 } ' |
+      sed -e s/addr://)
+    echo ${MY_IP:-"Not connected"}
+}
+
+function ii()   # Get current host related info.
+{
+    echo -e "\nYou are logged on ${BRed}$HOST"
+    echo -e "\n${BRed}Additionnal information:$NC " ; uname -a
+    echo -e "\n${BRed}Users logged on:$NC " ; w -hs |
+             cut -d " " -f1 | sort | uniq
+    echo -e "\n${BRed}Current date :$NC " ; date
+    echo -e "\n${BRed}Machine stats :$NC " ; uptime
+    echo -e "\n${BRed}Memory stats :$NC " ; free
+    echo -e "\n${BRed}Diskspace :$NC " ; mydf / $HOME
+    echo -e "\n${BRed}Local IP Address :$NC" ; my_ip
+    echo -e "\n${BRed}Open connections :$NC "; netstat -pan --inet;
+    echo
+}
+
+function ipcrmall()  # Remove all IPC from current host.
+{
+    ME=`whoami`
+
+    IPCS_S=`ipcs -s | egrep "0x[0-9a-f]+ [0-9]+" | grep $ME | cut -f2 -d" "`
+    IPCS_M=`ipcs -m | egrep "0x[0-9a-f]+ [0-9]+" | grep $ME | cut -f2 -d" "`
+    IPCS_Q=`ipcs -q | egrep "0x[0-9a-f]+ [0-9]+" | grep $ME | cut -f2 -d" "`
+
+    for id in $IPCS_M; do
+        ipcrm -m $id;
+    done
+
+    for id in $IPCS_S; do
+        ipcrm -s $id;
+    done
+
+    for id in $IPCS_Q; do
+        ipcrm -q $id;
+    done
+}
+
+#-------------------------------------------------------------
+# Misc utilities:
+#-------------------------------------------------------------
+
+function repeat()    # Repeat n times command.
+{
+    local i max
+    max$i; shift;
+    for ((i=1; i <= max; i++)); do  # --> C-like syntax
+        eval "$@";
+    done
+}
+
+function ask()       # See 'killps' for example of use.
+{
+    echo -n "$@" '[y/n] ' ; read ans
+    case "$ans" in
+        y*|Y*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+function corename()  # Get name of app that created a corefile.
+{
+    for file ; do
+        echo -n $file : ; gdb --core=$file --batch | head -1
+    done
+}
+
+function sshask()    # Setup sshs agent and key
+{
+    eval `ssh-agent -s`
+    echo "Sucessfully launched of ssh-agent"
+    ssh-add
+}
+
+########
+# Zoox #
+########
+alias bb=bazel\ build
+alias zz=cd\ ~/zooxco/driving
+alias zooxrc=source\ scripts/shell/zooxrc.sh
+alias zfixit=ci/file_validators/validate.py\ --fix
+alias zvault=VAULT_ADDR\=https://vault.zooxlabs.com:8200\ vault\ login\ -method=oidc\ username=sdarayan
+alias zgdb=~/zooxco/driving/devx/scripts/debug.py
+
+function cas_offline() {
+    bb --config=kraken //vehicle/ai_monitor/cas_offline/node:offline_node &&
+    brun //vehicle/ai_monitor/cas_offline/node:offline_node -- --output_chum_variant "cas" --output_chum_root "/mnt/nautilus_rw/tmp/${USER}-`uuid`" --logtostderr --chum_uri $@
+}
+
+function compare_bw_analysis() {
+    bazel build --config=kraken //scripts/tools/zci:compare_bw_analysis &&
+    bazel run //scripts/tools/zci:compare_bw_analysis -- \
+        --output_dir="/tmp/bandwidth_diff" \
+        --bw_type="bw_vehicle_diff" \
+        --lhs_run_id="$1" \
+        --rhs_run_id="$2" \
+        --avg_acceptable_kbps_increase=150 \
+        --ingest \
+        --no_bazel
+}
+
+function multicov() {
+    cd `bazel info workspace` &&
+        scripts/hap/multicov '$1' /var/www/html/multicov
+}
+
+function run_timeline() {
+    bazel build --config=kraken //scripts/tools/zci:render_timing_analysis_commands
+    bazel build --config=kraken //scripts/tools/zci:plot_timing_analysis
+    bazel run //scripts/tools/zci:render_timing_analysis_commands -- --ingest_meta_id=$1 &&
+        bazel run //scripts/tools/zci:plot_timing_analysis -- --ingest_meta_id=$1 --max_threads=8
+}
+
+function sched_trace_analyzer() {
+    bazel build --config=kraken //scripts/perf/sched_trace_analyzer:sched_trace_analyzer
+    bazel run -c opt //scripts/perf/sched_trace_analyzer:sched_trace_analyzer -- --uri $1 --output_folder /var/www/html/perfanalysis
+}
+
+function sched_trace_analyzer_cmp() {
+    bazel build --config=kraken //scripts/perf/sched_trace_analyzer:sched_trace_analyzer
+    bazel run -c opt //scripts/perf/sched_trace_analyzer:sched_trace_analyzer -- --uri "$1" --output_folder /var/www/html/perfanalysis --compare "$2"
+}
+
+function traceview() {
+    bazel build --config=kraken //scripts/tools/trace:traceview
+    bazel run //scripts/tools/trace:traceview -- $1 --out /var/www/html/traceview
+}
+
+function resolve_conflicts_breaking() {
+    cd `bazel info workspace` && 
+    ci/scripts/resolve_conflicts.py --branch "$1" --base-branch "$2" --breaking --notify '@sdarayan'
+}
+
+function ztrace_compare() {
+    bazel build --config=kraken //experimental/jirion/python_utils/scripts/ztrace:compare
+    bazel run //experimental/jirion/python_utils/scripts/ztrace:compare -- "$1" "$2" --show_counts --outfile="$3"
+}
+
+function perfetto() {
+    bazel build --config=kraken //scripts/tools/trace/utils:perfetto
+    bazel run //scripts/tools/trace/utils:perfetto -- --chum_uri "$1" --out /var/www/html/perfetto
+}
+
+function crr() {
+    bazel build --config=kraken //scripts/tools/compute_resources:compute_resources_report_main
+    bazel run //scripts/tools/compute_resources:compute_resources_report_main -- -o "/var/www/html/crr" --names baseline candidate --chum_uris "$1" "$2"
+}
